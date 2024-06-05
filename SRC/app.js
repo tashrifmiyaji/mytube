@@ -8,17 +8,16 @@ const { CORS_ORIGIN } = process.env;
 
 // initilation
 const app = express();
-app.use(express.json({ limit: "10kb" }))
-app.use(express.urlencoded({ extended: true }))
-app.use(express.static("public"))
-app.use(cookieParser())
-app.use(cors(
-    {
+app.use(express.json({ limit: "10kb" }));
+app.use(express.urlencoded({ extended: true }));
+app.use(express.static("public"));
+app.use(cookieParser());
+app.use(
+    cors({
         origin: CORS_ORIGIN,
-        credentials: true
-    }
-))
-
+        credentials: true,
+    })
+);
 
 // export
 export { app };
