@@ -6,7 +6,7 @@ import cookieParser from "cookie-parser";
 // internal inputs
 const { CORS_ORIGIN } = process.env;
 
-// initilation
+// initilazition
 const app = express();
 app.use(express.json({ limit: "10kb" }));
 app.use(express.urlencoded({ extended: true }));
@@ -18,6 +18,12 @@ app.use(
         credentials: true,
     })
 );
+
+// Routes inmputs
+import userRouter from "./routes/user.route.js";
+
+// Routes declaration
+app.use("/api/v1/user", userRouter);
 
 // export
 export { app };
