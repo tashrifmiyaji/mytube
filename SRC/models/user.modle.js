@@ -5,6 +5,12 @@ import jwt from "jsonwebtoken";
 
 const userSchema = new Schema(
     {
+        fullName: {
+            type: String,
+            required: [true, "fullname is required!"],
+            trim: true,
+            index: true,
+        },
         username: {
             type: String,
             required: [true, "username is required"],
@@ -20,11 +26,9 @@ const userSchema = new Schema(
             lowercase: true,
             trim: true,
         },
-        fullName: {
+        password: {
             type: String,
-            required: [true, "fullname is required!"],
-            trim: true,
-            index: true,
+            required: [true, "password is required!"],
         },
         avatar: {
             type: String, // cloudinary url
@@ -39,10 +43,6 @@ const userSchema = new Schema(
                 ref: "Video",
             },
         ],
-        password: {
-            type: String,
-            required: [true, "password is required!"],
-        },
         refreshToken: {
             type: String,
         },
@@ -52,7 +52,7 @@ const userSchema = new Schema(
 
 userSchema.pre("save", async function (next) {
     if (this.isModified("password")) {
-        this.password = bcrypt.hash(this.password, 10);
+        this.password = await bcrypt.hash(this.password, 10);
         next();
     }
 });

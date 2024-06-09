@@ -1,6 +1,6 @@
 // external inputs
 import { v2 as cloudinary } from "cloudinary";
-import { fs } from "fs";
+import fs from "fs";
 
 // cloudinary Configuration
 cloudinary.config({

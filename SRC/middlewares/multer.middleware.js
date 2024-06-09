@@ -1,3 +1,4 @@
+// external inputs
 import multer from "multer";
 
 const storage = multer.diskStorage({
@@ -12,3 +13,18 @@ const storage = multer.diskStorage({
 export const upload = multer({
     storage,
 });
+
+// avatar upload config
+const avatarUpload = upload.fields([
+    {
+        name: "avatar",
+        maxCount: 1
+    },
+    {
+        name: "coverAvatar",
+        maxCount: 1
+    }
+])
+
+// export
+export { avatarUpload };
