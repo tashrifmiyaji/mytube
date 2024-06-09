@@ -29,28 +29,32 @@ const registerUser = asyncHandlerWP(async (req, res) => {
     }
 
     // check if user already exists: Username, email
-    const existedUser = User.findOne({
+    const existedUser = await User.findOne({
         $or: [{ username }, { email }],
     });
     if (existedUser) {
-        throw new ApiError(409, "You already have an account!");
+        throw new ApiError(409, "already you have an account!");
     }
 
     // check for images, check for avatar
     //! multer amaderke tar poroborti middleware gulote req.files er access dey
     const avatarLocalPath = req.files?.avatar[0]?.path;
-    const coverImageLocalPath = req.files?.coverAvatar[0]?.path;
+    // const coverImageLocalPath = req.files?.coverImage[0]?.path;
+    let coverImageLocalPath;
+    if (req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0) {
+        coverImageLocalPath = req.files.coverImage[0].path;
+    }
 
     if (!avatarLocalPath) {
         throw new ApiError(400, "avatar file is required!");
     }
-
+    
     // upload them to cloudinary, avatar
     const avatar = await uploadOnCloudinary(avatarLocalPath);
     const coverImage = await uploadOnCloudinary(coverImageLocalPath);
 
     if (!avatar) {
-        throw new ApiError(500);
+        throw new ApiError(500, "avatar uploading problem!");
     }
 
     // create user object - create entry in db
@@ -60,7 +64,7 @@ const registerUser = asyncHandlerWP(async (req, res) => {
         email,
         password,
         avatar: avatar?.url,
-        coverImage: coverImage?.url || "",
+        coverImage: coverImage?.url || null
     });
 
     // remove password and refresh token field from response

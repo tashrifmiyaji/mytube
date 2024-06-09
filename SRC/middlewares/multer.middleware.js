@@ -21,7 +21,7 @@ const avatarUpload = upload.fields([
         maxCount: 1
     },
     {
-        name: "coverAvatar",
+        name: "coverImage",
         maxCount: 1
     }
 ])
