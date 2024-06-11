@@ -225,4 +225,6 @@ const refreshAccessToken = asyncHandlerWP(async (req, res) => {
         throw new ApiError(401, error, "invalid refresh token!");
     }
 });
+
+// export
 export { registerUser, loginUser, logoutUser, refreshAccessToken };
