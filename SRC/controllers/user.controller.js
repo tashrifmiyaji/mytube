@@ -242,7 +242,13 @@ const changeCurrentPassword = asyncHandlerWP(async (req, res) => {
 
     return res
         .status(200)
-        .json( new ApiResponse(200, {}, "password changed successfully"))
+        .json(new ApiResponse(200, {}, "password changed successfully"));
+});
+
+const getCurrentUser = asyncHandlerWP(async (req, res) => {
+    return res
+        .status(200)
+        .json(200, req.user, "current user fatched successfully");
 });
 
 // export
@@ -252,4 +258,5 @@ export {
     logoutUser,
     refreshAccessToken,
     changeCurrentPassword,
+    getCurrentUser
 };
