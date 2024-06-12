@@ -226,5 +226,30 @@ const refreshAccessToken = asyncHandlerWP(async (req, res) => {
     }
 });
 
+const changeCurrentPassword = asyncHandlerWP(async (req, res) => {
+    const { oldPassword, newPassword } = req.body;
+
+    const user = await User.findById(req.user?._id);
+
+    const isCorrectPassword = user.isCorrectPassword(oldPassword);
+
+    if (!isCorrectPassword) {
+        throw new ApiError(400, "invalid password!");
+    }
+
+    user.password = newPassword;
+    await user.save({ validitBeforeSave: false });
+
+    return res
+        .status(200)
+        .json( new ApiResponse(200, {}, "password changed successfully"))
+});
+
 // export
-export { registerUser, loginUser, logoutUser, refreshAccessToken };
+export {
+    registerUser,
+    loginUser,
+    logoutUser,
+    refreshAccessToken,
+    changeCurrentPassword,
+};
