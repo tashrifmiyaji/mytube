@@ -8,12 +8,16 @@ import {
     logoutUser,
     refreshAccessToken,
     changeCurrentPassword,
+    updateAccountDetails,
+    updateUserAvatar,
+    updateUserCoverImage,
     getCurrentUser,
+    getUserChannelProfile
 } from "../controllers/user.controller.js";
 import { avatarUpload } from "../middlewares/multer.middleware.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 
-// initilaization
+// initialization
 const router = Router();
 
 // register route
@@ -31,8 +35,20 @@ router.route("/refresh-token").post(refreshAccessToken);
 // change current password // secure route
 router.route("/change-password").post(verifyJWT, changeCurrentPassword);
 
+// update account details  // secure route
+router.route("/update-account-details").patch(verifyJWT, updateAccountDetails);
+
+// update avatar // secure route
+router.route("/update-avatar").patch(verifyJWT, updateUserAvatar);
+
+// update cover image // secure route
+router.route("/update-cover-image").patch(verifyJWT, updateUserCoverImage);
+
 // get current user  // secure route
 router.route("/get-user").get(verifyJWT, getCurrentUser);
+
+// get channel profile  // secure route
+router.route("/get-channel-profile").get(verifyJWT, getUserChannelProfile);
 
 // export
 export default router;

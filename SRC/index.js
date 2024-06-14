@@ -12,13 +12,13 @@ import dotenv from "dotenv";
 import { app } from "./app.js";
 import connectDB from "./db/mongoDB.js";
 
-// initilazation
+// initialization
 dotenv.config({ path: dotenvFilePath});
 
 // port
 const { PORT } = process.env;
 
-// call database and creat express server
+// call database and create express server
 connectDB().then(() => {
     try {
         app.listen(PORT || 8000, () => {
