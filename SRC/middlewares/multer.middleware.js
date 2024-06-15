@@ -14,17 +14,23 @@ export const upload = multer({
     storage,
 });
 
-// avatar upload config
-const avatarUpload = upload.fields([
+// avatar And cover Image upload config
+const avatarAndCoverImageUpload = upload.fields([
     {
         name: "avatar",
-        maxCount: 1
+        maxCount: 1,
     },
     {
         name: "coverImage",
-        maxCount: 1
-    }
-])
+        maxCount: 1,
+    },
+]);
+
+// avatar update
+const avatarUpdate = upload.single("avatar");
+
+// avatar update
+const coverImageUpdate = upload.single("coverImage");
 
 // export
-export { avatarUpload };
+export { avatarAndCoverImageUpload, avatarUpdate, coverImageUpdate };

@@ -4,8 +4,9 @@ import { ApiError } from "../utils/ApiError.js";
 import { User } from "../models/user.model.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
-import { generateAccessAndRefreshToken } from "../utils/tokenGenarate.js";
+import { generateAccessAndRefreshToken } from "../utils/tokenGenerate.js";
 import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
 
 const registerUser = asyncHandlerWP(async (req, res) => {
     // get user details from frontend
@@ -74,12 +75,12 @@ const registerUser = asyncHandlerWP(async (req, res) => {
     });
 
     // remove password and refresh token field from response
-    const createddUser = await User.findById(user._id).select(
+    const createdUser = await User.findById(user._id).select(
         "-password -refreshToken"
     );
 
     // check for user creation
-    if (!createddUser) {
+    if (!createdUser) {
         throw new ApiError(
             500,
             "something went wrong while register the User!"
@@ -88,7 +89,7 @@ const registerUser = asyncHandlerWP(async (req, res) => {
 
     // return res
     res.status(201).json(
-        new ApiResponse(200, createddUser, "user registed successfully")
+        new ApiResponse(200, createdUser, "user registed successfully")
     );
 });
 
@@ -97,8 +98,8 @@ const loginUser = asyncHandlerWP(async (req, res) => {
     // username or email from body
     // find user
     // check password
-    // genarate access & refresh token
-    // send token with cookes
+    // generate access & refresh token
+    // send token with cookies
 
     const { username, email, password } = req.body;
 
@@ -238,7 +239,7 @@ const changeCurrentPassword = asyncHandlerWP(async (req, res) => {
     }
 
     user.password = newPassword;
-    await user.save({ validitBeforeSave: false });
+    await user.save({ validateBeforeSave: false });
 
     return res
         .status(200)
@@ -399,14 +400,77 @@ const getUserChannelProfile = asyncHandlerWP(async (req, res) => {
     ]);
 
     if (!channel?.length) {
-        throw new ApiError(404, "channel dose not exist!")
+        throw new ApiError(404, "channel dose not exist!");
     }
     console.log(channel);
 
     return res
         .status(200)
-        .json( new ApiResponse(200, channel[0], "user channel fetched successfully"))
+        .json(
+            new ApiResponse(
+                200,
+                channel[0],
+                "user channel fetched successfully"
+            )
+        );
+});
 
+const getWatchHistory = asyncHandlerWP(async (req, res) => {
+    const user = await User.aggregate([
+        {
+            $match: {
+                // shorashori mongodb te _id er valu thake objectId('xxxxxxxxxxx') eita
+                // mongoose er mondde amader sudu _id er objectId er digit ta lekhle chole she porobortite aslo mongodb er moto kore database save kore
+                // aggregation pipelines er shathe mongoose er kono somporko nei tai ekhane shorashori mongodb er moto korei id lekhte hoy
+                _id: mongoose.Types.ObjectId(req.user._id),
+            },
+        },
+        {
+            $lookup: {
+                from: "videos",
+                localField: "watchHistory",
+                foreignField: "_id",
+                as: "watchHistory",
+                pipeline: [
+                    {
+                        $lookup: {
+                            from: "users",
+                            localField: "owner",
+                            foreignField: "_id",
+                            as: "owner",
+                            pipeline: [
+                                {
+                                    $project: {
+                                        fullName: 1,
+                                        username: 1,
+                                        email: 1,
+                                        avatar: 1,
+                                    },
+                                },
+                            ],
+                        },
+                    },
+                    {
+                        $addFields: {
+                            owner: {
+                                $first: "$owner",
+                            },
+                        },
+                    },
+                ],
+            },
+        },
+    ]);
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(
+                200,
+                user[0].watchHistory,
+                "watch history fetched successfully"
+            )
+        );
 });
 
 // export
@@ -421,4 +485,5 @@ export {
     updateUserAvatar,
     updateUserCoverImage,
     getUserChannelProfile,
+    getWatchHistory
 };
