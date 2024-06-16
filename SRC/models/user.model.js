@@ -7,7 +7,7 @@ const userSchema = new Schema(
     {
         fullName: {
             type: String,
-            required: [true, "fullname is required!"],
+            required: [true, "fullName is required!"],
             trim: true,
             index: true,
         },
