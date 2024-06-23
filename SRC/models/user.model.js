@@ -31,11 +31,11 @@ const userSchema = new Schema(
             required: [true, "password is required!"],
         },
         avatar: {
-            type: String, // cloudinary url
+            type: Object, // cloudinary url and cloudinary public_id
             required: [true, "avatar is required!"],
         },
         coverImage: {
-            type: String, // cloudinary url
+            type: Object, // cloudinary url
         },
         watchHistory: [
             {

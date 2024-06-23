@@ -2,7 +2,10 @@
 import { asyncHandlerWP } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { User } from "../models/user.model.js";
-import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import {
+    uploadOnCloudinary,
+    deleteFromCloudinary,
+} from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { generateAccessAndRefreshToken } from "../utils/tokenGenerate.js";
 import jwt from "jsonwebtoken";
@@ -70,14 +73,20 @@ const registerUser = asyncHandlerWP(async (req, res) => {
         username,
         email,
         password,
-        avatar: avatar?.url,
-        coverImage: coverImage?.url || null,
+        avatar: { public_id: avatar?.public_id, url: avatar?.url },
+        coverImage: {
+            public_id: coverImage?.public_id || null,
+            url: coverImage?.url || null,
+        },
     });
 
-    // remove password and refresh token field from response
-    const createdUser = await User.findById(user._id).select(
-        "-password -refreshToken"
+    const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
+        user._id
     );
+    // Todo if be problem when save data in database then delete image from cloudinary
+
+    // remove password and refresh token field from response
+    const createdUser = await User.findById(user._id).select("-password");
 
     // check for user creation
     if (!createdUser) {
@@ -87,10 +96,26 @@ const registerUser = asyncHandlerWP(async (req, res) => {
         );
     }
 
+    // cookie options
+    const cookieOptions = {
+        httpOnly: true,
+        secure: true,
+    };
+
     // return res
-    res.status(201).json(
-        new ApiResponse(200, createdUser, "user registed successfully")
-    );
+    res.status(201)
+        .cookie("accessToken", accessToken, cookieOptions)
+        .cookie("refreshToken", refreshToken, cookieOptions)
+        .json(
+            new ApiResponse(
+                200,
+                {
+                    user: createdUser,
+                    accessToken,
+                },
+                "user registered successfully"
+            )
+        );
 });
 
 const loginUser = asyncHandlerWP(async (req, res) => {
@@ -115,7 +140,7 @@ const loginUser = asyncHandlerWP(async (req, res) => {
         throw new ApiError(404, "user does not exist!");
     }
 
-    const isPasswordValid = user.isCorrectPassword(password);
+    const isPasswordValid = await user.isCorrectPassword(password);
 
     if (!isPasswordValid) {
         throw new ApiError(401, "invalid user credentials!");
@@ -189,7 +214,7 @@ const refreshAccessToken = asyncHandlerWP(async (req, res) => {
     try {
         const decodedToken = jwt.verify(
             incomingRefreshToken,
-            process.env.ACCESS_TOKEN_SECRET
+            process.env.REFRESH_TOKEN_SECRET
         );
 
         const user = await User.findById(decodedToken._id);
@@ -207,18 +232,17 @@ const refreshAccessToken = asyncHandlerWP(async (req, res) => {
             secure: true,
         };
 
-        const { accessToken, newRefreshToken } = generateAccessAndRefreshToken(
-            user._id
-        );
+        const { accessToken, refreshToken } =
+            await generateAccessAndRefreshToken(user._id);
 
         return res
             .status(200)
             .cookie("accessToken", accessToken, cookieOptions)
-            .cookie("refreshToken", newRefreshToken, cookieOptions)
+            .cookie("refreshToken", refreshToken, cookieOptions)
             .json(
                 new ApiResponse(
                     200,
-                    { accessToken, refreshToken: newRefreshToken },
+                    { accessToken, refreshToken },
                     "Access token refreshed"
                 )
             );
@@ -230,33 +254,46 @@ const refreshAccessToken = asyncHandlerWP(async (req, res) => {
 const changeCurrentPassword = asyncHandlerWP(async (req, res) => {
     const { oldPassword, newPassword } = req.body;
 
-    const user = await User.findById(req.user?._id);
+    try {
+        const user = await User.findById(req.user?._id);
 
-    const isCorrectPassword = user.isCorrectPassword(oldPassword);
+        const isCorrectPassword = user.isCorrectPassword(oldPassword);
 
-    if (!isCorrectPassword) {
-        throw new ApiError(400, "invalid password!");
+        if (!isCorrectPassword) {
+            throw new ApiError(400, "invalid password!");
+        }
+
+        user.password = newPassword;
+        await user.save({ validateBeforeSave: false });
+
+        return res
+            .status(200)
+            .json(new ApiResponse(200, {}, "password changed successfully"));
+    } catch (error) {
+        throw new ApiError(401, "unauthorized request!");
     }
-
-    user.password = newPassword;
-    await user.save({ validateBeforeSave: false });
-
-    return res
-        .status(200)
-        .json(new ApiResponse(200, {}, "password changed successfully"));
 });
 
 const getCurrentUser = asyncHandlerWP(async (req, res) => {
     return res
         .status(200)
-        .json(200, req.user, "current user fetched successfully");
+        .json(
+            new ApiResponse(200, req.user, "current user fetched successfully")
+        );
 });
 
 const updateAccountDetails = asyncHandlerWP(async (req, res) => {
-    const { fullName, email } = req.body;
+    const { fullName, email, password } = req.body;
 
-    if (!fullName || !email) {
+    if (!(fullName || email)) {
         throw new ApiError(400, "min 1 field is required!");
+    }
+
+    const isCorrectPassword = await req.user._id.isCorrectPassword(password);
+    console.log(isCorrectPassword);
+
+    if (!isCorrectPassword) {
+        throw new ApiError(401, "invalid password");
     }
 
     const user = await User.findByIdAndUpdate(
@@ -278,15 +315,15 @@ const updateAccountDetails = asyncHandlerWP(async (req, res) => {
 });
 
 const updateUserAvatar = asyncHandlerWP(async (req, res) => {
-    const avatarLocalPath = req.file?.avatar;
+    const avatarLocalPath = req.file?.path;
 
     if (!avatarLocalPath) {
         throw new ApiError(400, "avatar file is missing!");
     }
 
-    const avatar = uploadOnCloudinary(avatarLocalPath);
+    const avatar = await uploadOnCloudinary(avatarLocalPath);
 
-    if (!avatar.url) {
+    if (!avatar.url && !avatar.public_id) {
         throw new ApiError(500, "avatar updating problem!");
     }
 
@@ -294,43 +331,55 @@ const updateUserAvatar = asyncHandlerWP(async (req, res) => {
         req.user._id,
         {
             $set: {
-                avatar: avatar.url,
+                avatar: {
+                    public_id: avatar.public_id,
+                    url: avatar.url,
+                },
             },
         },
         { new: true }
     ).select("-password");
 
-    // TODO delete old avatar after uploading new avatar on cloudinary
-    const oldAvatar = req.user.avatar;
-    console.log(oldAvatar);
-
+    // delete old avatar after uploading new avatar on cloudinary
+    const oldAvatarPublic_id = req.user.avatar.public_id;
+    deleteFromCloudinary(oldAvatarPublic_id);
     return res
         .status(200)
         .json(new ApiResponse(200, user, "avatar updated successfully"));
 });
 
-const updateUserCoverImage = asyncHandlerWP(async (req, res) => {
-    const coverImageLocalPath = req.file?.coverImage;
+const uploadOrUpdateCoverImage = asyncHandlerWP(async (req, res) => {
+    const coverImageLocalPath = req.file?.path;
 
     if (!coverImageLocalPath) {
         throw new ApiError(400, "cover image file is missing!");
     }
 
-    const coverImage = uploadOnCloudinary(coverImageLocalPath);
+    const coverImage = await uploadOnCloudinary(coverImageLocalPath);
 
-    if (!coverImage.url) {
-        throw new ApiError(500, "avatar updating problem!");
+    if (!coverImage.url && !coverImage.public_id) {
+        throw new ApiError(500, "cover image updating problem!");
     }
 
     const user = await User.findByIdAndUpdate(
         req.user._id,
         {
             $set: {
-                coverImage: coverImage.url,
+                coverImage: {
+                    public_id: coverImage.public_id,
+                    url: coverImage.url
+                }
             },
         },
         { new: true }
     ).select("-password");
+
+    // If there is a previous cover image then delete it
+    const oldCoverImagePublic_id = req.user.coverImage?.public_id
+
+    if (oldCoverImagePublic_id) {
+        deleteFromCloudinary(oldCoverImagePublic_id)
+    }
 
     return res
         .status(200)
@@ -473,6 +522,8 @@ const getWatchHistory = asyncHandlerWP(async (req, res) => {
         );
 });
 
+//Todo delete user account
+
 // export
 export {
     registerUser,
@@ -483,7 +534,7 @@ export {
     getCurrentUser,
     updateAccountDetails,
     updateUserAvatar,
-    updateUserCoverImage,
+    uploadOrUpdateCoverImage,
     getUserChannelProfile,
-    getWatchHistory
+    getWatchHistory,
 };

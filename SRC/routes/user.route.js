@@ -10,7 +10,7 @@ import {
     changeCurrentPassword,
     updateAccountDetails,
     updateUserAvatar,
-    updateUserCoverImage,
+    uploadOrUpdateCoverImage,
     getCurrentUser,
     getUserChannelProfile,
     getWatchHistory
@@ -49,13 +49,13 @@ router.route("/update-avatar").patch(verifyJWT, avatarUpdate, updateUserAvatar);
 // update cover image // secure route
 router
     .route("/update-coverImage")
-    .patch(verifyJWT, coverImageUpdate, updateUserCoverImage);
+    .patch(verifyJWT, coverImageUpdate, uploadOrUpdateCoverImage);
 
 // get current user  // secure route
-router.route("/get-user").get(verifyJWT, getCurrentUser);
+router.route("/user").get(verifyJWT, getCurrentUser);
 
 // get channel profile  // secure route
-router.route("/get-profile/:username").get(verifyJWT, getUserChannelProfile);
+router.route("/profile/:username").get(verifyJWT, getUserChannelProfile);
 
 // get watch history  // secure route
 router.route("/watch-history").get(verifyJWT, getWatchHistory)
