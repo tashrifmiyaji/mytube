@@ -47,21 +47,18 @@ const toggleSubscription = asyncHandlerWP(async (req, res) => {
 });
 
 // controller to return subscriber list of a channel
-const getUserChannelSubscribers = asyncHandlerWP(async (req, res) => {
+const getChannelSubscribers = asyncHandlerWP(async (req, res) => {
     const { channelId } = req.params;
 
     if (!isValidObjectId(channelId)) {
-        throw new ApiError(400, "invalid channel");
+        throw new ApiError(400, "invalid channel!");
     }
 
     try {
         // Find all subscriptions where 'channel' matches the channelId
-        const subscribers = await Subscription.find({ channel: channelId }).populate(
-            "subscriber",
-            "fullName username avatar"
-        ); // Populate subscriber details from User model
-        
-        console.log(subscribers);
+        const subscribers = await Subscription.find({
+            channel: channelId,
+        }).populate("subscriber", "fullName username avatar"); // Populate subscriber details from User model
 
         res.status(200).json(
             new ApiResponse(
@@ -71,9 +68,36 @@ const getUserChannelSubscribers = asyncHandlerWP(async (req, res) => {
             )
         );
     } catch (error) {
-        throw new ApiError(500, "Failed to fetch channel subscribers");
+        throw new ApiError(500, "Failed to fetch channel subscribers!");
+    }
+});
+
+const getSubscribedChannels = asyncHandlerWP(async (req, res) => {
+    const { subscriberId } = req.params;
+
+    // Check if the subscriberId is a valid MongoDB ObjectId
+    if (!isValidObjectId(subscriberId)) {
+        throw new ApiError(400, "Invalid subscriber Id!");
+    }
+    try {
+        // Find all subscriptions where 'subscriber' matches the subscriberId
+        const subscribedChannels = await Subscription.find({
+            subscriber: subscriberId,
+        }).populate("channel", "fullName username avatar"); // Populate channel details from User model
+
+        return res
+            .status(200)
+            .json(
+                new ApiResponse(
+                    200,
+                    subscribedChannels,
+                    "Subscribed channels fetched successfully"
+                )
+            );
+    } catch (error) {
+        throw new ApiError(500, "Failed to fetch subscribed channels");
     }
 });
 
 // export
-export { toggleSubscription, getUserChannelSubscribers };
+export { toggleSubscription, getChannelSubscribers, getSubscribedChannels };

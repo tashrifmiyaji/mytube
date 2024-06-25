@@ -274,7 +274,6 @@ const changeCurrentPassword = asyncHandlerWP(async (req, res) => {
     }
 });
 
-
 const updateAccountDetails = asyncHandlerWP(async (req, res) => {
     const { fullName, email, password } = req.body;
 
