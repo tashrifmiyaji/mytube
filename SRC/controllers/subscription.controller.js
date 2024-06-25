@@ -1,16 +1,15 @@
 // external inputs
-import mongoose, { isValidObjectId } from "mongoose";
+import { isValidObjectId } from "mongoose";
 
 // internal inputs
-import { User } from "../models/user.model.js";
 import { Subscription } from "../models/subscription.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandlerWP } from "../utils/asyncHandler.js";
 
 const toggleSubscription = asyncHandlerWP(async (req, res) => {
-    const { channelId } = req.params;
     const subscriberId = req.user?._id;
+    const { channelId } = req.params;
 
     // Check if the subscriber and channel IDs are valid MongoDB ObjectIDs
     if (!isValidObjectId(channelId) || !isValidObjectId(subscriberId)) {
@@ -48,7 +47,8 @@ const toggleSubscription = asyncHandlerWP(async (req, res) => {
 
 // controller to return subscriber list of a channel
 const getChannelSubscribers = asyncHandlerWP(async (req, res) => {
-    const { channelId } = req.params;
+    // shudu matro user nijei nijer subscriber and subscribed channel er details dekhte parbe
+    const channelId = req.user._id;
 
     if (!isValidObjectId(channelId)) {
         throw new ApiError(400, "invalid channel!");
@@ -56,9 +56,13 @@ const getChannelSubscribers = asyncHandlerWP(async (req, res) => {
 
     try {
         // Find all subscriptions where 'channel' matches the channelId
-        const subscribers = await Subscription.find({
+        let subscribers = await Subscription.find({
             channel: channelId,
         }).populate("subscriber", "fullName username avatar"); // Populate subscriber details from User model
+
+        if (subscribers.length < 1) {
+            subscribers = "you have no subscriber!";
+        }
 
         res.status(200).json(
             new ApiResponse(
@@ -73,7 +77,8 @@ const getChannelSubscribers = asyncHandlerWP(async (req, res) => {
 });
 
 const getSubscribedChannels = asyncHandlerWP(async (req, res) => {
-    const { subscriberId } = req.params;
+    // shudu matro user nijei nijer subscriber and subscribed channel er details dekhte parbe
+    const subscriberId = req.user._id;
 
     // Check if the subscriberId is a valid MongoDB ObjectId
     if (!isValidObjectId(subscriberId)) {
@@ -81,10 +86,14 @@ const getSubscribedChannels = asyncHandlerWP(async (req, res) => {
     }
     try {
         // Find all subscriptions where 'subscriber' matches the subscriberId
-        const subscribedChannels = await Subscription.find({
+        let subscribedChannels = await Subscription.find({
             subscriber: subscriberId,
         }).populate("channel", "fullName username avatar"); // Populate channel details from User model
-
+        
+        if (subscribedChannels.length < 1) {
+            subscribedChannels = "you have no subscribed channel!"
+        }
+        
         return res
             .status(200)
             .json(
