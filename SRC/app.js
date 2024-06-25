@@ -19,11 +19,13 @@ app.use(
     })
 );
 
-// Routes inmputs
-import userRouter from "./routes/user.route.js";
+// Routes inputs
+import userRouter from "./routes/user.routes.js";
+import subscriptionRouter from "./routes/subscription.routes.js"
 
 // Routes declaration
 app.use("/api/v1/user", userRouter);
+app.use("/api/v1/subscriptions", subscriptionRouter);
 
 // export
 export { app };

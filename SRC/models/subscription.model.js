@@ -11,7 +11,7 @@ const subscriptionSchema = new Schema(
             ref: "User",
         },
     },
-    { timestamps }
+    { timestamps: true }
 );
 
 const Subscription = mongoose.model("Subscription", subscriptionSchema);

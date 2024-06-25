@@ -274,13 +274,6 @@ const changeCurrentPassword = asyncHandlerWP(async (req, res) => {
     }
 });
 
-const getCurrentUser = asyncHandlerWP(async (req, res) => {
-    return res
-        .status(200)
-        .json(
-            new ApiResponse(200, req.user, "current user fetched successfully")
-        );
-});
 
 const updateAccountDetails = asyncHandlerWP(async (req, res) => {
     const { fullName, email, password } = req.body;
@@ -386,6 +379,14 @@ const uploadOrUpdateCoverImage = asyncHandlerWP(async (req, res) => {
         .json(new ApiResponse(200, user, "cover image updated successfully"));
 });
 
+const getCurrentUser = asyncHandlerWP(async (req, res) => {
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(200, req.user, "current user fetched successfully")
+        );
+});
+
 const getUserChannelProfile = asyncHandlerWP(async (req, res) => {
     // jodi 5 ta document e "a" namok channel thake tahole "a" er 5 jon subscriber ache, jara sovai "a" ke subscribe korche
     // R jodi 5 ta document e "a" namok subscriber thake tahole "a" nije 5 ta channel ke subscribe korche,
@@ -427,7 +428,7 @@ const getUserChannelProfile = asyncHandlerWP(async (req, res) => {
                 },
                 isSubscribed: {
                     $cond: {
-                        if: { $in: [req.user?._id, "subscribers.subscriber"] },
+                        if: {$in: [req.user?._id, "$subscribers.subscriber"]},
                         then: true,
                         else: false,
                     },
@@ -451,8 +452,6 @@ const getUserChannelProfile = asyncHandlerWP(async (req, res) => {
     if (!channel?.length) {
         throw new ApiError(404, "channel dose not exist!");
     }
-    console.log(channel);
-
     return res
         .status(200)
         .json(
