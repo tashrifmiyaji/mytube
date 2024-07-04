@@ -28,10 +28,10 @@ const avatarAndCoverImageUpload = upload.fields([
     },
 ]);
 
-// avatar update
+// avatar update config
 const avatarUpdate = upload.single("avatar");
 
-// avatar update
+// coverImage upload config
 const coverImageUpdate = upload.single("coverImage");
 
 // export

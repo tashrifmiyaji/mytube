@@ -10,7 +10,6 @@ dotenv.config({ path: dotenvFilePath });
 // external inputs
 import { v2 as cloudinary } from "cloudinary";
 import fs from "fs";
-import { log } from "util";
 
 // cloudinary Configuration
 cloudinary.config({

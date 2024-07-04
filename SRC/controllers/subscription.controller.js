@@ -24,7 +24,7 @@ const toggleSubscription = asyncHandlerWP(async (req, res) => {
 
         if (subscription) {
             // If subscription exists, remove it (unsubscribe)
-            await Subscription.findByIdAndDelete(subscription.id);
+            await Subscription.deleteOne();
             return res
                 .status(200)
                 .json(new ApiResponse(200, {}, "Unsubscribed successfully"));
