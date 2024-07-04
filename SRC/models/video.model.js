@@ -36,7 +36,7 @@ const videoSchema = new Schema(
         },
         duration: {
             type: Number,
-            required: [true, "title is required!"],
+            require: true
         },
         views: {
             type: Number,
