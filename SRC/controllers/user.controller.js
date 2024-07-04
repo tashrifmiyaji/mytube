@@ -42,6 +42,7 @@ const registerUser = asyncHandlerWP(async (req, res) => {
         throw new ApiError(409, "already you have an account!");
     }
 
+    
     // check for images, check for avatar
     //! multer amaderke tar poroborti middleware gulote req.files er access dey
     const avatarLocalPath = req.files?.avatar[0]?.path;
@@ -54,14 +55,15 @@ const registerUser = asyncHandlerWP(async (req, res) => {
     ) {
         coverImageLocalPath = req.files.coverImage[0].path;
     }
+    console.log("hello3");
 
     if (!avatarLocalPath) {
         throw new ApiError(400, "avatar file is required!");
     }
 
     // upload them to cloudinary, avatar
-    const avatar = await uploadOnCloudinary(avatarLocalPath);
-    const coverImage = await uploadOnCloudinary(coverImageLocalPath);
+    const avatar = await uploadOnCloudinary(avatarLocalPath, "mytube/avatar");
+    const coverImage = await uploadOnCloudinary(coverImageLocalPath, "mytube/coverImage");
 
     if (!avatar) {
         throw new ApiError(500, "avatar uploading problem!");
@@ -317,7 +319,7 @@ const updateUserAvatar = asyncHandlerWP(async (req, res) => {
         throw new ApiError(400, "avatar file is missing!");
     }
 
-    const avatar = await uploadOnCloudinary(avatarLocalPath);
+    const avatar = await uploadOnCloudinary(avatarLocalPath, "mytube/avatar");
 
     if (!avatar.url && !avatar.public_id) {
         throw new ApiError(500, "avatar updating problem!");
@@ -351,7 +353,7 @@ const uploadOrUpdateCoverImage = asyncHandlerWP(async (req, res) => {
         throw new ApiError(400, "cover image file is missing!");
     }
 
-    const coverImage = await uploadOnCloudinary(coverImageLocalPath);
+    const coverImage = await uploadOnCloudinary(coverImageLocalPath, "mytube/coverImage");
 
     if (!coverImage.url && !coverImage.public_id) {
         throw new ApiError(500, "cover image updating problem!");

@@ -18,12 +18,13 @@ cloudinary.config({
     api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
+    
 // upload on cloudinary
-const uploadOnCloudinary = async (localFilePath) => {
+const uploadOnCloudinary = async (localFilePath, cloudinaryFolder) => {
     try {
         if (!localFilePath) return null;
         const response = await cloudinary.uploader.upload(localFilePath, {
-            folder: "mytube",
+            folder: cloudinaryFolder,
             resource_type: "auto",
         });
         // remove the locally saved temporary file as the upload operation success!
@@ -36,6 +37,7 @@ const uploadOnCloudinary = async (localFilePath) => {
         return null;
     }
 };
+
 
 const deleteFromCloudinary = async (cloudinaryPublic_idForDeleting) => {
     try {

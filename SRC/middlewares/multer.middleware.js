@@ -1,7 +1,6 @@
 // external inputs
 import multer from "multer";
 
-// faster sava the file in local machine then upload
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
         cb(null, "./public/temp");
@@ -11,13 +10,7 @@ const storage = multer.diskStorage({
     },
 });
 
-const upload = multer({
-    storage,
-});
-
-// file upload without save local machine
-const storage2 = multer.memoryStorage();
-const upload2 = multer({ storage2 });
+const upload = multer({ storage });
 
 // avatar And cover Image upload config
 const avatarAndCoverImageUpload = upload.fields([
@@ -31,6 +24,7 @@ const avatarAndCoverImageUpload = upload.fields([
     },
 ]);
 
+
 // avatar update config
 const avatarUpdate = upload.single("avatar");
 
@@ -38,7 +32,22 @@ const avatarUpdate = upload.single("avatar");
 const coverImageUpdate = upload.single("coverImage");
 
 // video upload config
-const uploadAVideo = upload2.single("videoFile");
+
+const uploadAVideoAndThumbnail = upload.fields([
+    {
+        name: "videoFile",
+        maxCount: 1,
+    },
+    {
+        name: "thumbnail",
+        maxCount: 1,
+    },
+]);
 
 // export
-export { avatarAndCoverImageUpload, avatarUpdate, coverImageUpdate, uploadAVideo };
+export {
+    avatarAndCoverImageUpload,
+    avatarUpdate,
+    coverImageUpdate,
+    uploadAVideoAndThumbnail,
+};

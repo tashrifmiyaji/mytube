@@ -1,7 +1,7 @@
 {
   "name": "mytube",
   "version": "1.0.0",
-  "description": "",
+  "description": "this is an advance backend project.",
   "main": "index.js",
   "type": "module",
   "scripts": {
