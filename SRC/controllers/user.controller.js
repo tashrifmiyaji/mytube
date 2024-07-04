@@ -83,13 +83,17 @@ const registerUser = asyncHandlerWP(async (req, res) => {
     const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
         user._id
     );
-    // Todo if be problem when save data in database then delete image from cloudinary
 
     // remove password and refresh token field from response
     const createdUser = await User.findById(user._id).select("-password");
 
     // check for user creation
     if (!createdUser) {
+        // Todo if be problem when save data in database then delete image from cloudinary
+        await deleteFromCloudinary(avatar.public_id);
+        if (coverImage) {
+            await deleteFromCloudinary(coverImage.public_id);
+        }
         throw new ApiError(
             500,
             "something went wrong while register the User!"
@@ -359,18 +363,18 @@ const uploadOrUpdateCoverImage = asyncHandlerWP(async (req, res) => {
             $set: {
                 coverImage: {
                     public_id: coverImage.public_id,
-                    url: coverImage.url
-                }
+                    url: coverImage.url,
+                },
             },
         },
         { new: true }
     ).select("-password");
 
     // If there is a previous cover image then delete it
-    const oldCoverImagePublic_id = req.user.coverImage?.public_id
+    const oldCoverImagePublic_id = req.user.coverImage?.public_id;
 
     if (oldCoverImagePublic_id) {
-        deleteFromCloudinary(oldCoverImagePublic_id)
+        deleteFromCloudinary(oldCoverImagePublic_id);
     }
 
     return res
@@ -427,7 +431,7 @@ const getUserChannelProfile = asyncHandlerWP(async (req, res) => {
                 },
                 isSubscribed: {
                     $cond: {
-                        if: {$in: [req.user?._id, "$subscribers.subscriber"]},
+                        if: { $in: [req.user?._id, "$subscribers.subscriber"] },
                         then: true,
                         else: false,
                     },
@@ -520,7 +524,8 @@ const getWatchHistory = asyncHandlerWP(async (req, res) => {
         );
 });
 
-//Todo delete user account
+//Todo delete user account permanently
+// const deleteUserAccountPermanently = asyncHandlerWP(async (req, res) => {});n
 
 // export
 export {
