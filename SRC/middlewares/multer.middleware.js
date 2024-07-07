@@ -24,7 +24,6 @@ const avatarAndCoverImageUpload = upload.fields([
     },
 ]);
 
-
 // avatar update config
 const avatarUpdate = upload.single("avatar");
 
@@ -44,10 +43,14 @@ const uploadAVideoAndThumbnail = upload.fields([
     },
 ]);
 
+// update thumbnail
+const updateThumbnail = upload.single("thumbnail");
+
 // export
 export {
     avatarAndCoverImageUpload,
     avatarUpdate,
     coverImageUpdate,
     uploadAVideoAndThumbnail,
+    updateThumbnail
 };
