@@ -10,7 +10,7 @@ import { asyncHandlerWP } from "../utils/asyncHandler.js";
 import {
     uploadOnCloudinary,
     deleteCloudinaryImage,
-    deleteCloudinaryVideo
+    deleteCloudinaryVideo,
 } from "../utils/cloudinary.js";
 
 const getAllVideos = asyncHandlerWP(async (req, res) => {
@@ -165,7 +165,7 @@ const deleteAVideo = asyncHandlerWP(async (req, res) => {
     // TODO: delete video
     // get video id from req.params
     // check id is valid
-    // 
+    //
     // send res
     const { videoId } = req.params;
     if (!isValidObjectId(videoId)) {
@@ -178,10 +178,10 @@ const deleteAVideo = asyncHandlerWP(async (req, res) => {
         throw new ApiError(404, "video has not found!");
     }
 
-    const deletedVideo  = await deleteCloudinaryVideo(video.videoFile.public_id);
-    const deletedThumbnail  = await deleteCloudinaryImage(video.thumbnail.public_id);
+    await deleteCloudinaryVideo(video.videoFile.public_id);
+    await deleteCloudinaryImage(video.thumbnail.public_id);
 
-    const deletedVideoFromDb = await Video.findByIdAndDelete(videoId)
+    await Video.findByIdAndDelete(videoId);
 
     res.status(200).json(
         new ApiResponse(200, [], "video has been deleted success")
@@ -189,10 +189,54 @@ const deleteAVideo = asyncHandlerWP(async (req, res) => {
 });
 
 const togglePublishStatus = asyncHandlerWP(async (req, res) => {
+    // TODO togglePublishStatus
     const { videoId } = req.params;
+
+    if (!isValidObjectId(videoId)) {
+        throw new ApiError(400, "invalid video id!");
+    }
+    const video = await Video.findById(videoId);
+
+    video.isPublished = !video.isPublished;
+    await video.save({ validateBeforeSave: false });
+
+    const videoStatus = { isPublished: video.isPublished };
+
+    res.status(200).json(
+        new ApiResponse(200, videoStatus, "video publish status is toggled")
+    );
 });
 
-// Todo delete all video from a user
+const deleteAllVideos = asyncHandlerWP(async (req, res) => {
+    // Todo delete all video from a user (this is my todo)
+
+    const ownerId = req.user._id;
+
+    const allVideos = await Video.find({ owner: ownerId });
+
+    if (allVideos.length < 1) {
+        throw new ApiError(404, "any videos has not found!");
+    }
+
+    allVideos.map(async (field) => {
+        await deleteCloudinaryVideo(field.videoFile.public_id);
+        await deleteCloudinaryImage(field.thumbnail.public_id);
+    });
+
+    let deletedVideos = await Video.deleteMany({ owner: ownerId });
+
+    deletedVideos.deletedCount = {
+        deletedVideoCount: deletedVideos.deletedCount,
+    };
+
+    res.status(200).json(
+        new ApiResponse(
+            200,
+            deletedVideos.deletedCount,
+            "all videos has been deleted success"
+        )
+    );
+});
 
 export {
     getAllVideos,
@@ -200,5 +244,6 @@ export {
     getVideoById,
     updateVideo,
     deleteAVideo,
+    deleteAllVideos,
     togglePublishStatus,
 };
