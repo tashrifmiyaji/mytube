@@ -4,7 +4,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { User } from "../models/user.model.js";
 import {
     uploadOnCloudinary,
-    deleteFromCloudinary,
+    deleteCloudinaryImage,
 } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { generateAccessAndRefreshToken } from "../utils/tokenGenerate.js";
@@ -26,6 +26,7 @@ const registerUser = asyncHandlerWP(async (req, res) => {
     const { fullName, username, email, password } = req.body;
 
     // validation - not empty
+
     if (
         [fullName, username, email, password].some(
             (field) => field?.trim() === ""
@@ -42,7 +43,6 @@ const registerUser = asyncHandlerWP(async (req, res) => {
         throw new ApiError(409, "already you have an account!");
     }
 
-    
     // check for images, check for avatar
     //! multer amaderke tar poroborti middleware gulote req.files er access dey
     const avatarLocalPath = req.files?.avatar[0]?.path;
@@ -55,7 +55,7 @@ const registerUser = asyncHandlerWP(async (req, res) => {
     ) {
         coverImageLocalPath = req.files.coverImage[0].path;
     }
-    console.log("hello3");
+  
 
     if (!avatarLocalPath) {
         throw new ApiError(400, "avatar file is required!");
@@ -92,9 +92,9 @@ const registerUser = asyncHandlerWP(async (req, res) => {
     // check for user creation
     if (!createdUser) {
         // Todo if be problem when save data in database then delete image from cloudinary
-        await deleteFromCloudinary(avatar.public_id);
+        await deleteCloudinaryImage(avatar.public_id);
         if (coverImage) {
-            await deleteFromCloudinary(coverImage.public_id);
+            await deleteCloudinaryImage(coverImage.public_id);
         }
         throw new ApiError(
             500,
@@ -340,7 +340,7 @@ const updateUserAvatar = asyncHandlerWP(async (req, res) => {
 
     // delete old avatar after uploading new avatar on cloudinary
     const oldAvatarPublic_id = req.user.avatar.public_id;
-    deleteFromCloudinary(oldAvatarPublic_id);
+    deleteCloudinaryImage(oldAvatarPublic_id);
     return res
         .status(200)
         .json(new ApiResponse(200, user, "avatar updated successfully"));
@@ -376,7 +376,7 @@ const uploadOrUpdateCoverImage = asyncHandlerWP(async (req, res) => {
     const oldCoverImagePublic_id = req.user.coverImage?.public_id;
 
     if (oldCoverImagePublic_id) {
-        deleteFromCloudinary(oldCoverImagePublic_id);
+        await deleteCloudinaryImage(oldCoverImagePublic_id);
     }
 
     return res

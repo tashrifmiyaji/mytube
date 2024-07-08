@@ -18,7 +18,6 @@ cloudinary.config({
     api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-    
 // upload on cloudinary
 const uploadOnCloudinary = async (localFilePath, cloudinaryFolder) => {
     try {
@@ -38,16 +37,35 @@ const uploadOnCloudinary = async (localFilePath, cloudinaryFolder) => {
     }
 };
 
-
-const deleteFromCloudinary = async (cloudinaryPublic_idForDeleting) => {
+const deleteCloudinaryImage = async (cloudinaryPublic_idForDeleting) => {
     try {
-        if (!cloudinaryPublic_idForDeleting) return null
-        const response = await cloudinary.uploader.destroy(cloudinaryPublic_idForDeleting);
-        return response
+        if (!cloudinaryPublic_idForDeleting) return null;
+        const response = await cloudinary.uploader.destroy(
+            cloudinaryPublic_idForDeleting,
+            {
+                resource_type: "image"
+            }
+        );
+        return response;
+    } catch (error) {
+        console.log(error);
+    }
+};
+
+const deleteCloudinaryVideo = async (cloudinaryPublic_idForDeleting) => {
+    try {
+        if (!cloudinaryPublic_idForDeleting) return null;
+        const response = await cloudinary.uploader.destroy(
+            cloudinaryPublic_idForDeleting,
+            {
+                resource_type: "video",
+            }
+        );
+        return response;
     } catch (error) {
         console.log(error);
     }
 };
 
 // export
-export { uploadOnCloudinary, deleteFromCloudinary };
+export { uploadOnCloudinary, deleteCloudinaryImage, deleteCloudinaryVideo };

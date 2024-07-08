@@ -9,7 +9,8 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandlerWP } from "../utils/asyncHandler.js";
 import {
     uploadOnCloudinary,
-    deleteFromCloudinary,
+    deleteCloudinaryImage,
+    deleteCloudinaryVideo
 } from "../utils/cloudinary.js";
 
 const getAllVideos = asyncHandlerWP(async (req, res) => {
@@ -141,7 +142,7 @@ const updateVideo = asyncHandlerWP(async (req, res) => {
     }
 
     if (thumbnailFile) {
-        await deleteFromCloudinary(video.thumbnail.public_id);
+        await deleteCloudinaryImage(video.thumbnail.public_id);
         const thumbnail = await uploadOnCloudinary(
             thumbnailFile,
             "mytube/thumbnails"
@@ -160,9 +161,31 @@ const updateVideo = asyncHandlerWP(async (req, res) => {
     );
 });
 
-const deleteVideo = asyncHandlerWP(async (req, res) => {
-    //TODO: delete video
+const deleteAVideo = asyncHandlerWP(async (req, res) => {
+    // TODO: delete video
+    // get video id from req.params
+    // check id is valid
+    // 
+    // send res
     const { videoId } = req.params;
+    if (!isValidObjectId(videoId)) {
+        throw new ApiError(400, "invalid video id");
+    }
+
+    const video = await Video.findById(videoId);
+
+    if (!video) {
+        throw new ApiError(404, "video has not found!");
+    }
+
+    const deletedVideo  = await deleteCloudinaryVideo(video.videoFile.public_id);
+    const deletedThumbnail  = await deleteCloudinaryImage(video.thumbnail.public_id);
+
+    const deletedVideoFromDb = await Video.findByIdAndDelete(videoId)
+
+    res.status(200).json(
+        new ApiResponse(200, [], "video has been deleted success")
+    );
 });
 
 const togglePublishStatus = asyncHandlerWP(async (req, res) => {
@@ -170,11 +193,12 @@ const togglePublishStatus = asyncHandlerWP(async (req, res) => {
 });
 
 // Todo delete all video from a user
+
 export {
     getAllVideos,
     publishAVideo,
     getVideoById,
     updateVideo,
-    deleteVideo,
+    deleteAVideo,
     togglePublishStatus,
 };
