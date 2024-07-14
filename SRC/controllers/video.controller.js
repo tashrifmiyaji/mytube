@@ -208,7 +208,7 @@ const togglePublishStatus = asyncHandlerWP(async (req, res) => {
 });
 
 const deleteAllVideos = asyncHandlerWP(async (req, res) => {
-    // Todo delete all video from a user (this is my todo)
+    // Todo delete all video from a user ( it's my todo )
 
     const ownerId = req.user._id;
 

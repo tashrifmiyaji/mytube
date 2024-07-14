@@ -11,6 +11,7 @@ const storage = multer.diskStorage({
 });
 
 const upload = multer({ storage });
+//! /////////////////////////////////////////////////////
 
 // avatar And cover Image upload config
 const avatarAndCoverImageUpload = upload.fields([

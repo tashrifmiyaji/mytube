@@ -5,7 +5,7 @@ const asyncHandlerWP = (fn) => {
     };
 };
 
-// asycn handle with tryCatch
+// async handle with tryCatch
 const asyncHandlerWT = (fn) => async (req, res, next) => {
     try {
         await fn(req, res, next);

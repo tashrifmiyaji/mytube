@@ -27,7 +27,7 @@ const playListSchema = new Schema(
 );
 
 playListSchema.plugin(mongooseAggregatePaginate);
-const playList = mongoose.model("Like", playListSchema);
+const playList = mongoose.model("Playlist", playListSchema);
 
 // export
 export { playList };
