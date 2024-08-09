@@ -23,6 +23,7 @@ const router = Router();
 //
 router.use(verifyJWT); // Apply verifyJWT middleware to all routes in this file
 
+router.route("/").get(getAllVideos);
 router.route("/upload-video").post(uploadAVideoAndThumbnail, publishAVideo);
 router.route("/video-byId/:videoId").get(getVideoById);
 router.route("/update-video/:videoId").post(updateThumbnail, updateVideo);

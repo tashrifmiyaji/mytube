@@ -1,14 +1,14 @@
-// external inport
+// external import
 import mongoose from "mongoose";
 
-// internal inport
+// internal import
 import { DB_NAME } from "../constants.js";
 
 // connect database
 const connectDB = async () => {
     try {
         const connectionInstance = await mongoose.connect(
-            `${process.env.MONGODB_URL}/${DB_NAME}`
+            `${process.env.MONGODB_URI}/${DB_NAME}`
         );
         console.log(
             `\nmongodb connection is success! \nDB HOST : ${connectionInstance.connection.host} `

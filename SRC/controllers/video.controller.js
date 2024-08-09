@@ -3,7 +3,6 @@ import mongoose, { isValidObjectId } from "mongoose";
 
 // internal inputs
 import { Video } from "../models/video.model.js";
-import { User } from "../models/user.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandlerWP } from "../utils/asyncHandler.js";
@@ -15,7 +14,87 @@ import {
 
 const getAllVideos = asyncHandlerWP(async (req, res) => {
     //TODO: get all videos based on query, sort, pagination
-    const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query;
+    const {
+        page = 1,
+        limit = 10,
+        query = "",
+        sortBy = "createdAt",
+        sortType = 1,
+    } = req.query;
+
+    let videoAggregate;
+
+    try {
+        videoAggregate = Video.aggregate([
+            {
+                $match: {
+                    $or: [
+                        { title: { $regex: query, $options: "i" } },
+                        { description: { $regex: query, $options: "i" } },
+                    ],
+                },
+            },
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "owner",
+                    foreignField: "_id",
+                    as: "videoOwner",
+                    pipeline: [
+                        {
+                            $project: {
+                                _id: 1,
+                                fullName: 1,
+                                username: 1,
+                                avatar: 1,
+                            },
+                        },
+                    ],
+                },
+            },
+            {
+                $addFields: {
+                    owner: {
+                        $first: "$videoOwner",
+                    },
+                },
+            },
+            {
+                $sort: {
+                    [sortBy]: sortType,
+                },
+            },
+        ]);
+    } catch (error) {
+        console.error("Error in aggregation:", error);
+        throw new ApiError(
+            500,
+            error.message || "Internal server error in video aggregation"
+        );
+    }
+
+    const options = {
+        skip: (page - 1) * limit,
+        limit: parseInt(limit),
+        customLabels: {
+            totalDocs: "totalVideos",
+            docs: "videos",
+        },
+    };
+
+    Video.aggregatePaginate(videoAggregate, options).then((result) => {
+        if (result?.videos?.length === 0) {
+            return res
+                .status(200)
+                .json(new ApiResponse(200, [], "No videos found"));
+        }
+        return res
+            .status(200)
+            .json(new ApiResponse(200, result, "video fetched successfully"));
+    }).catch( (error) => {
+        console.log("error ::", error)
+        throw new ApiError(500, error?.message || "Internal server error in video aggregate Paginate")
+    })
 });
 
 const publishAVideo = asyncHandlerWP(async (req, res) => {

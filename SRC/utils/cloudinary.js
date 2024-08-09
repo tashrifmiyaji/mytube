@@ -1,11 +1,14 @@
-// env config
-import path from "path";
-import { fileURLToPath } from "url";
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const dotenvFilePath = path.join(__dirname, "../../.env");
+// // env config
+// import path from "path";
+// import { fileURLToPath } from "url";
+// const __filename = fileURLToPath(import.meta.url);
+// const __dirname = path.dirname(__filename);
+// const dotenvFilePath = path.join(__dirname, "../../.env");
+// import dotenv from "dotenv";
+// dotenv.config({ path: dotenvFilePath });
+
 import dotenv from "dotenv";
-dotenv.config({ path: dotenvFilePath });
+dotenv.config();
 
 // external inputs
 import { v2 as cloudinary } from "cloudinary";
