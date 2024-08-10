@@ -104,6 +104,32 @@ const toggleTweetLike = asyncHandlerWP(async (req, res) => {
 
 const getLikedVideos = asyncHandlerWP(async (req, res) => {
     // TODO get all liked videos
+
+    const likes = await Like.find({
+        likedBy: req.user?._id,
+        video: { $ne: null },
+    }).populate("video");
+
+    // except null extract all data from likes array
+    const likedVideos = likes
+        .filter((like) => like.video)
+        .map((like) => like.video);
+
+    if (likedVideos.length === 0) {
+        return res
+            .status(200)
+            .json(ApiResponse(200, [], "You haven't liked any videos yet"));
+    }
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(
+                200,
+                likedVideos,
+                "Liked videos fetched successfully"
+            )
+        );
 });
 
 export { toggleVideoLike, toggleCommentLike, toggleTweetLike, getLikedVideos };
