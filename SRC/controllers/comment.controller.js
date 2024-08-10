@@ -8,6 +8,21 @@ const getVideoComments = asyncHandlerWP(async (req, res) => {
     // TODO get all comment for a video
     const { videoId } = req.params;
     const { page = 1, limit = 10 } = req.query;
+
+    if (!isValidObjectId(videoId)) {
+        throw new ApiError(400, "Invalid video ID!");
+    }
+
+    const skip = (page - 1) * limit;
+    const comments = await Comment.find({ video: videoId })
+        .skip(skip)
+        .limit(limit);
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(200, comments, "Fetch All Comments Successfully")
+        );
 });
 
 const addComment = asyncHandlerWP(async (req, res) => {
@@ -70,18 +85,16 @@ const deleteComment = asyncHandlerWP(async (req, res) => {
     const { commentId } = req.params;
 
     if (!isValidObjectId(commentId)) {
-        throw new ApiError(400, "invalid comment id!")
+        throw new ApiError(400, "invalid comment id!");
     }
 
     const isDelete = await Comment.findByIdAndDelete(commentId);
-    
+
     if (!isDelete) {
-        throw new ApiError(404, "no comment found!")
+        throw new ApiError(404, "no comment found!");
     }
 
-    res
-    .status(200)
-    .json(new ApiResponse(200, isDelete, "delete this comment"))
+    res.status(200).json(new ApiResponse(200, isDelete, "delete this comment"));
 });
 
 export { getVideoComments, addComment, updateComment, deleteComment };
