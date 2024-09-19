@@ -6,7 +6,7 @@ import { Comment } from "../models/comment.model.js";
 import { Tweet } from "../models/tweet.model.js";
 
 const getChannelStats = asyncHandlerWP(async (req, res) => {
-    // TODO: Get the channel stats like total video views, total subscribers, total videos, total likes etc.
+    // TODO: Get the channel stats like total video views, total subscribers, total subscribed channel, total videos, total likes, total comment, total comment likes, total tweets,, total tweets likes  etc.
 
     let data = {};
 
