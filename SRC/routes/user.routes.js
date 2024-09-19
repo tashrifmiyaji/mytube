@@ -13,7 +13,8 @@ import {
     uploadOrUpdateCoverImage,
     getCurrentUser,
     getUserChannelProfile,
-    getWatchHistory
+    getWatchHistory,
+    deleteUserAccountPermanently
 } from "../controllers/user.controller.js";
 import {
     avatarAndCoverImageUpload,
@@ -59,6 +60,9 @@ router.route("/profile/:username").get(verifyJWT, getUserChannelProfile);
 
 // get watch history  // secure route
 router.route("/watch-history").get(verifyJWT, getWatchHistory)
+
+// delete user account permanently
+router.route("/delete-account").delete(verifyJWT, deleteUserAccountPermanently)
 
 // export
 export default router;

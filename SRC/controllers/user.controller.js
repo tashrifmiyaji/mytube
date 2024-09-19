@@ -2,6 +2,12 @@
 import { asyncHandlerWP } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { User } from "../models/user.model.js";
+import { Subscription } from "../models/subscription.model.js";
+import { Video } from "../models/video.model.js";
+import { Playlist } from "../models/playlist.model.js";
+import { Tweet } from "../models/tweet.model.js";
+import { Comment } from "../models/comment.model.js";
+import { Like } from "../models/like.model.js";
 import {
     uploadOnCloudinary,
     deleteCloudinaryImage,
@@ -55,7 +61,6 @@ const registerUser = asyncHandlerWP(async (req, res) => {
     ) {
         coverImageLocalPath = req.files.coverImage[0].path;
     }
-  
 
     if (!avatarLocalPath) {
         throw new ApiError(400, "avatar file is required!");
@@ -63,7 +68,10 @@ const registerUser = asyncHandlerWP(async (req, res) => {
 
     // upload them to cloudinary, avatar
     const avatar = await uploadOnCloudinary(avatarLocalPath, "mytube/avatar");
-    const coverImage = await uploadOnCloudinary(coverImageLocalPath, "mytube/coverImage");
+    const coverImage = await uploadOnCloudinary(
+        coverImageLocalPath,
+        "mytube/coverImage"
+    );
 
     if (!avatar) {
         throw new ApiError(500, "avatar uploading problem!");
@@ -353,7 +361,10 @@ const uploadOrUpdateCoverImage = asyncHandlerWP(async (req, res) => {
         throw new ApiError(400, "cover image file is missing!");
     }
 
-    const coverImage = await uploadOnCloudinary(coverImageLocalPath, "mytube/coverImage");
+    const coverImage = await uploadOnCloudinary(
+        coverImageLocalPath,
+        "mytube/coverImage"
+    );
 
     if (!coverImage.url && !coverImage.public_id) {
         throw new ApiError(500, "cover image updating problem!");
@@ -527,7 +538,29 @@ const getWatchHistory = asyncHandlerWP(async (req, res) => {
 });
 
 //Todo delete user account permanently
-// const deleteUserAccountPermanently = asyncHandlerWP(async (req, res) => {});n
+const deleteUserAccountPermanently = asyncHandlerWP(async (req, res) => {
+    await Playlist.deleteMany({ owner: req.user._id });
+    await Video.deleteMany({ owner: req.user._id });
+    await Tweet.deleteMany({ owner: req.user._id });
+    await Comment.deleteMany({ owner: req.user._id });
+    await Like.deleteMany({ likedBy: req.user._id });
+    await Subscription.deleteMany({
+        $or: [{ channel: req.user._id }, { subscriber: req.user._id }],
+    });
+    
+    const avatarPublicId = req.user.avatar.public_id;
+    const coverImagePublic_id = req.user.coverImage.public_id;
+    
+    if (avatarPublicId) {
+        await deleteCloudinaryImage(avatarPublicId);  
+    }
+    if (coverImagePublic_id) {
+        await deleteCloudinaryImage(coverImagePublic_id);
+    }
+    await User.findByIdAndDelete(req.user._id);
+
+    res.status(200).json( new ApiResponse(200, {}, "this account has been deleted successfully"))
+});
 
 // export
 export {
@@ -542,4 +575,5 @@ export {
     uploadOrUpdateCoverImage,
     getUserChannelProfile,
     getWatchHistory,
+    deleteUserAccountPermanently
 };
