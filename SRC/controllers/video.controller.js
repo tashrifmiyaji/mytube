@@ -11,6 +11,11 @@ import {
     deleteCloudinaryImage,
     deleteCloudinaryVideo,
 } from "../utils/cloudinary.js";
+import {
+    notifySubscribers,
+    updateNotification,
+    deleteNotification,
+} from "../Service/notificationService.js";
 
 const getAllVideos = asyncHandlerWP(async (req, res) => {
     //TODO: get all videos based on query, sort, pagination
@@ -82,19 +87,27 @@ const getAllVideos = asyncHandlerWP(async (req, res) => {
         },
     };
 
-    Video.aggregatePaginate(videoAggregate, options).then((result) => {
-        if (result?.videos?.length === 0) {
+    Video.aggregatePaginate(videoAggregate, options)
+        .then((result) => {
+            if (result?.videos?.length === 0) {
+                return res
+                    .status(200)
+                    .json(new ApiResponse(200, [], "No videos found"));
+            }
             return res
                 .status(200)
-                .json(new ApiResponse(200, [], "No videos found"));
-        }
-        return res
-            .status(200)
-            .json(new ApiResponse(200, result, "video fetched successfully"));
-    }).catch( (error) => {
-        console.log("error ::", error)
-        throw new ApiError(500, error?.message || "Internal server error in video aggregate Paginate")
-    })
+                .json(
+                    new ApiResponse(200, result, "video fetched successfully")
+                );
+        })
+        .catch((error) => {
+            console.log("error ::", error);
+            throw new ApiError(
+                500,
+                error?.message ||
+                    "Internal server error in video aggregate Paginate"
+            );
+        });
 });
 
 const publishAVideo = asyncHandlerWP(async (req, res) => {
@@ -109,10 +122,14 @@ const publishAVideo = asyncHandlerWP(async (req, res) => {
     // create video and save in db
     // send responds
 
-    const { title, description } = req.body;
+    const { title, description, notifyMessage } = req.body;
 
     if (!title && !description) {
         throw new ApiError(400, "Please provide title and description");
+    }
+
+    if (!notifyMessage) {
+        throw new ApiError(400, "notify message is required!");
     }
 
     if ([title, description].some((field) => field?.trim() === "")) {
@@ -149,6 +166,16 @@ const publishAVideo = asyncHandlerWP(async (req, res) => {
     if (!createVideo) {
         throw new ApiError(500, "internal server error!");
     }
+
+    // Notify the subscribers after the video is uploaded
+    const videoDetails = {
+        videoId: createVideo._id,
+        title,
+        url: video.url,
+        message: notifyMessage,
+    };
+
+    await notifySubscribers(req.user._id, videoDetails);
 
     res.status(201).json(
         new ApiResponse(200, createVideo, "video uploaded successful")
@@ -193,9 +220,8 @@ const updateVideo = asyncHandlerWP(async (req, res) => {
     // get updated
     // send res
     const { videoId } = req.params;
-    const { title, description } = req.body;
+    const { title, description, notifyMessage } = req.body;
     const thumbnailFile = req.file?.path;
-    console.log(thumbnailFile);
 
     if (!isValidObjectId(videoId)) {
         throw new ApiError(400, "invalid video id!");
@@ -206,6 +232,10 @@ const updateVideo = asyncHandlerWP(async (req, res) => {
             400,
             "title or description or thumbnail is required for updating!"
         );
+    }
+
+    if (!notifyMessage) {
+        throw new ApiError(400, "notify message is required for updating!");
     }
 
     const video = await Video.findById(videoId);
@@ -235,6 +265,15 @@ const updateVideo = asyncHandlerWP(async (req, res) => {
         };
         await video.save({ validateBeforeSave: false });
     }
+
+    // update notification
+    const videoDetails = {
+        videoId: video._id,
+        title,
+        message: notifyMessage,
+    };
+    await updateNotification(videoDetails);
+
     res.status(200).json(
         new ApiResponse(200, video, "video updated successful")
     );
@@ -260,7 +299,10 @@ const deleteAVideo = asyncHandlerWP(async (req, res) => {
     await deleteCloudinaryVideo(video.videoFile.public_id);
     await deleteCloudinaryImage(video.thumbnail.public_id);
 
-    await Video.findByIdAndDelete(videoId);
+    // delete notification of this video
+    await deleteNotification(video._id);
+
+    await Video.findByIdAndDelete(video._id);
 
     res.status(200).json(
         new ApiResponse(200, [], "video has been deleted success")
